@@ -2,9 +2,10 @@
 #include <vector>
 #include <cmath>
 #include <iomanip>
+#include <ctime>
 #include <algorithm>
 
-const int nodes_count = 6;
+const int nodes_count = 18;
 
 double func_value(const double& x) {
   return cos(x) * x;
@@ -96,6 +97,8 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
 }
 
 std::vector<std::pair<double, int>> task_1_2(std::vector<double>& nodes) {
+  int nodes_count = nodes.size();
+  clock_t start_time = clock();
   std::vector<std::vector<double>> matrix(nodes_count,
                                           std::vector<double>(nodes_count));
   std::vector<double> B(nodes_count);
@@ -106,20 +109,25 @@ std::vector<std::pair<double, int>> task_1_2(std::vector<double>& nodes) {
     B[i] = func_value(nodes[i]);
   }
   B = solve_system(matrix, B, nodes_count);
+  clock_t end_time = clock();
+
+  long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
+//  std::cout << "Time: " << search_time << std::endl;
 
   std::vector<std::pair<double, int>> ret;
   for(int i = 0; i < nodes_count; ++i) {
     ret.emplace_back(B[i], nodes_count - i - 1);
-    if (i == nodes_count - 1) {
-      std::cout << std::fixed << std::setprecision(40) << "(" << B[i] << ")*x^" << nodes_count - i - 1 << std::endl;
-    } else {
-      std::cout << std::fixed << std::setprecision(40) << "(" << B[i] << ")*x^" << nodes_count - i - 1 << "+";
-    }
+//    if (i == nodes_count - 1) {
+//      std::cout << std::fixed << std::setprecision(12) << "(" << B[i] << ")*x^" << nodes_count - i - 1 << std::endl;
+//    } else {
+//      std::cout << std::fixed << std::setprecision(12) << "(" << B[i] << ")*x^" << nodes_count - i - 1 << "+";
+//    }
   }
   return ret;
 }
 
 void task_3_4(std::vector<double>& nodes) {
+  clock_t start_time = clock();
   auto temp = nodes;
   for(const auto& elem : temp) {
     nodes.push_back(elem);
@@ -148,22 +156,19 @@ void task_3_4(std::vector<double>& nodes) {
     ++sub_distance;
   }
 
-  for(int i = 0; i < rows; ++i) {
-    for(int j = 0; j < table[i].size(); ++j) {
-      std::cout << table[i][j] << "    ";
-    }
-    std::cout << std::endl;
-  }
+  clock_t end_time = clock();
+  long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
+  std::cout << "Time: " << search_time << std::endl;
 
   //print
   std::cout << table[0][1];
   for(int i = 2; i <= rows; ++i) {
-    std::cout << std::fixed << std::setprecision(8) << "+(" << table[i - 1][i] << ")*";
+    std::cout << std::fixed << std::setprecision(5) << "+(" << table[i - 1][i] << ")*";
     for(int j = 0; j < i - 1; ++j) {
       if (j != i - 2) {
-        std::cout << std::fixed << std::setprecision(8) << "(x-" << table[j][0] << ")*";
+        std::cout << std::fixed << std::setprecision(5) << "(x-" << table[j][0] << ")*";
       } else {
-        std::cout << std::fixed << std::setprecision(8) << "(x-" << table[j][0] << ")";
+        std::cout << std::fixed << std::setprecision(5) << "(x-" << table[j][0] << ")";
       }
     }
   }
@@ -216,6 +221,7 @@ double task_5() {
   bool left_margin = false;
   int left_ind = nearest_ind;
   int right_ind = nearest_ind;
+  int nodes_count = 1;
   while ((!left_margin && !right_margin) || fabs(cur_value - prev_value) >= 1e-8) {
     prev_value = cur_value;
     if (right_ind > 100) right_margin = true;
@@ -223,15 +229,18 @@ double task_5() {
     if (!left_margin) {
       --left_ind;
       nodes_to_check.push_back(nodes[left_ind]);
+      ++nodes_count;
     }
     if (!right_margin) {
       ++right_ind;
       nodes_to_check.push_back(nodes[right_ind]);
+      ++nodes_count;
     }
     pol = task_1_2(nodes_to_check);
     cur_value = get_polynom_value(pol, value);
+
   }
-  std::cout << cur_value << std::endl;
+  std::cout << "Nodes count: " << nodes_count << "Value: " <<  cur_value << std::endl;
   return cur_value;
 }
 
@@ -333,13 +342,13 @@ void task_7(int n) {
 }
 
 int main() {
-  /*Пункт 1,3*/auto nodes = get_equally_spaced_nodes(nodes_count);
-//   /*Пункт 2,4*/auto nodes = get_cheb_nodes(nodes_count);
+//  /*Пункт 1,3*/auto nodes = get_equally_spaced_nodes(nodes_count);
+   /*Пункт 2,4*/auto nodes = get_cheb_nodes(nodes_count);
 //  task_1_2(nodes);
 //  task_3_4(nodes);
-//  task_5();
+  task_5();
 //  task_6(nodes);
-  task_7(6);
+//  task_7(6);
 
   return 0;
 }

@@ -1,9 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <iomanip>
 
 const double eps = 1e-6;
-const double deriv = 1e-9;
+const double deriv = 1e-8;
 
 double norm(std::pair<double, double>& x_1, std::pair<double, double>& x_2) {
   return std::max(std::fabs(x_1.first - x_2.first),
@@ -40,25 +41,27 @@ std::vector<std::vector<double>> calculate_W(const double& x, const double& y) {
 }
 
 double F_1_x_value(const double& x, const double& y) {
-  return (calculate_F_1(x + deriv, y) - calculate_F_1(x, y)) / deriv;
+  return (calculate_F_1(x, y) - calculate_F_1(x - deriv, y)) / deriv;
 }
 
 double F_1_y_value(const double& x, const double& y) {
-  return (calculate_F_1(x, y + deriv) - calculate_F_1(x, y)) / deriv;
+  return (calculate_F_1(x, y) - calculate_F_1(x, y - deriv)) / deriv;
 }
 
 double F_2_x_value(const double& x, const double& y) {
-  return (calculate_F_2(x + deriv, y) - calculate_F_2(x, y)) / deriv;
+  return (calculate_F_2(x, y) - calculate_F_2(x - deriv, y)) / deriv;
 }
 
 double F_2_y_value(const double& x, const double& y) {
-  return (calculate_F_2(x, y + deriv) - calculate_F_2(x, y)) / deriv;
+  return (calculate_F_2(x, y) - calculate_F_2(x, y - deriv)) / deriv;
 }
 
 int main() {
 
   std::pair<double, double> x_k = {INT8_MIN, INT8_MIN};
-  std::pair<double, double> x_kp = {1, 1};
+//  std::pair<double, double> x_kp = {1.7, 0.75}; // 1.92352 0.793349
+//  std::pair<double, double> x_kp = {2, 0.5}; // 2.0209 0.540866
+  std::pair<double, double> x_kp = {-5, 1}; // -4.76876 1.35984
 
   int iters = 0;
   while (norm(x_k, x_kp) >= eps) {
@@ -85,8 +88,9 @@ int main() {
 
   auto F = calculate_F(x_kp.first, x_kp.second);
   std::cout << iters << " iterations" << std::endl;
-  for(int i = 0; i < 2; ++i)
-    std::cout << F[i] << " ";
+  std::cout << std::fixed << std::setprecision(10)
+            << x_kp.first << " " << x_kp.second << std::endl;
+  std::cout << std::fixed << std::setprecision(15) << F[0] << " " << F[1];
 
   return 0;
 }
