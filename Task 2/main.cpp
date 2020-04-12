@@ -48,7 +48,7 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
 
     //filling L matrix and doing Gauss
     for(int j = i + 1; j < nodes_count; ++j) {
-      if (matrix[j][i] != 0) {
+      if (fabs(matrix[j][i]) >= 1e-5) {
         double mul_value = matrix[j][i] / matrix[i][i];
         for(int t = i + 1; t < nodes_count; ++t) {
           matrix[j][t] -= mul_value * matrix[i][t];
@@ -71,7 +71,7 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
 
   //LY_2 = B'
   for(int i = 0; i < nodes_count; ++i) {
-    if (std::abs(B[i]) > 0.00001) {
+    if (fabs(B[i]) > 1e-5) {
       if (matrix[i][i] == 0) {
         std::cout << "Degenerate system";
         return {};
@@ -86,7 +86,7 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
 
   //UX = B''
   for(int i = nodes_count - 1; i >= 0; --i) {
-    if (std::abs(B[i]) > 0.00001) {
+    if (fabs(B[i]) > 1e-5) {
       for(int j = i - 1; j >= 0; --j) {
         B[j] -= B[i] * matrix[j][i];
       }
@@ -221,20 +221,21 @@ double task_5() {
   bool left_margin = false;
   int left_ind = nearest_ind;
   int right_ind = nearest_ind;
-  int nodes_count = 1;
+  int count = 1;
   while ((!left_margin && !right_margin) || fabs(cur_value - prev_value) >= 1e-8) {
+    --left_ind;
+    ++right_ind;
     prev_value = cur_value;
     if (right_ind > 100) right_margin = true;
     if (left_ind < 0) left_margin = true;
     if (!left_margin) {
-      --left_ind;
       nodes_to_check.push_back(nodes[left_ind]);
-      ++nodes_count;
+      ++count;
     }
     if (!right_margin) {
-      ++right_ind;
+
       nodes_to_check.push_back(nodes[right_ind]);
-      ++nodes_count;
+      ++count;
     }
     pol = task_1_2(nodes_to_check);
     cur_value = get_polynom_value(pol, value);
@@ -245,6 +246,7 @@ double task_5() {
 }
 
 void task_6(std::vector<double>& nodes) {
+  clock_t start_time = clock();
   int N = nodes_count - 1;
   std::vector<double>
       h(N + 1),
@@ -285,9 +287,13 @@ void task_6(std::vector<double>& nodes) {
     d[k] = (c[k] - c[k - 1]) / (3 * h[k]);
     b[k] = l[k] + (2 * c[k] * h[k] + h[k] * c[k - 1]) / 3;
   }
-  //printresult(N, y, b, c, d);
+
+  clock_t end_time = clock();
+  long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
+  std::cout << "Time: " << search_time << std::endl;
+
   for(int i = 1; i <= N; ++i) {
-    std::cout << "F_" << i << " = " << y[i] <<
+    std::cout << "[" <<nodes[i-1] << "; " << nodes[i] << "]; F_" << i << " = " << y[i] <<
               "+(" << b[i] << ")*(x-(" << nodes[i] << "))+(" <<
               c[i] << ")*(x-(" << nodes[i] << "))^2+(" <<
               d[i] << ")*(x-(" << nodes[i] << "))^3" << std::endl;
@@ -303,6 +309,7 @@ double scalar_mul(std::vector<double>& l, std::vector<double>& r) {
 }
 
 void task_7(int n) {
+  clock_t start_time = clock();
   std::vector<double> nodes;
   srand(time(nullptr));
   for(int i = 0; i < 100; ++i) {
@@ -331,6 +338,10 @@ void task_7(int n) {
   }
 
   auto ans = solve_system(matrix, b, n + 1);
+  clock_t end_time = clock();
+  long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
+  std::cout << "Time: " << search_time << std::endl;
+
 
   for(int i = 0; i < n + 1; ++i) {
     if (i != n) {
@@ -343,7 +354,7 @@ void task_7(int n) {
 
 int main() {
 //  /*Пункт 1,3*/auto nodes = get_equally_spaced_nodes(nodes_count);
-   /*Пункт 2,4*/auto nodes = get_cheb_nodes(nodes_count);
+//   /*Пункт 2,4*/auto nodes = get_cheb_nodes(nodes_count);
 //  task_1_2(nodes);
 //  task_3_4(nodes);
   task_5();
