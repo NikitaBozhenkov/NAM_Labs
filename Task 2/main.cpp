@@ -15,18 +15,19 @@ double func_deriv_value(const double& x) {
   return -sin(x) * x + cos(x);
 }
 
-std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::vector<double>& B, int nodes_count) {
-  std::vector<int> this_permutation(nodes_count);
+std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::vector<double>& B) {
+  int order = B.size();
+  std::vector<int> this_permutation(order);
 
-  for(int i = 0; i < nodes_count; ++i) {
+  for(int i = 0; i < order; ++i) {
     this_permutation[i] = i;
   }
 
-  for(int i = 0; i < nodes_count - 1; ++i) {
+  for(int i = 0; i < order - 1; ++i) {
     //finding max-abs elem
     int max_index = i;
     double max_elem = std::abs(matrix[i][i]);
-    for(int j = i + 1; j < nodes_count; ++j) {
+    for(int j = i + 1; j < order; ++j) {
       double potential_max = std::abs(matrix[j][i]);
       if (potential_max > max_elem) {
         max_elem = potential_max;
@@ -47,7 +48,7 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
     }
 
     //filling L matrix and doing Gauss
-    for(int j = i + 1; j < nodes_count; ++j) {
+    for(int j = i + 1; j < order; ++j) {
       if (fabs(matrix[j][i]) >= 1e-5) {
         double mul_value = matrix[j][i] / matrix[i][i];
         for(int t = i + 1; t < nodes_count; ++t) {
@@ -56,13 +57,13 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
       }
     }
 
-    for(int j = i + 1; j < nodes_count; ++j) {
+    for(int j = i + 1; j < order; ++j) {
       matrix[i][j] /= matrix[i][i];
     }
   }
 
 //  DY_1=B
-  for(int i = 0; i < nodes_count; ++i) {
+  for(int i = 0; i < order; ++i) {
     if (this_permutation[i] != i) {
       std::swap(B[this_permutation[this_permutation[i]]], B[this_permutation[i]]);
       std::swap(this_permutation[this_permutation[i]], this_permutation[i]);
@@ -70,7 +71,7 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
   }
 
   //LY_2 = B'
-  for(int i = 0; i < nodes_count; ++i) {
+  for(int i = 0; i < order; ++i) {
     if (fabs(B[i]) > 1e-5) {
       if (matrix[i][i] == 0) {
         std::cout << "Degenerate system";
@@ -78,14 +79,14 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
       }
       B[i] /= matrix[i][i];
       //matrix[i][i] = 1;
-      for(int j = i + 1; j < nodes_count; ++j) {
+      for(int j = i + 1; j < order; ++j) {
         B[j] -= B[i] * matrix[j][i];
       }
     }
   }
 
   //UX = B''
-  for(int i = nodes_count - 1; i >= 0; --i) {
+  for(int i = order - 1; i >= 0; --i) {
     if (fabs(B[i]) > 1e-5) {
       for(int j = i - 1; j >= 0; --j) {
         B[j] -= B[i] * matrix[j][i];
@@ -97,26 +98,26 @@ std::vector<double> solve_system(std::vector<std::vector<double>>& matrix, std::
 }
 
 std::vector<std::pair<double, int>> task_1_2(std::vector<double>& nodes) {
-  int nodes_count = nodes.size();
+  int order = nodes.size();
   clock_t start_time = clock();
-  std::vector<std::vector<double>> matrix(nodes_count,
-                                          std::vector<double>(nodes_count));
-  std::vector<double> B(nodes_count);
-  for(int i = 0; i < nodes_count; ++i) {
-    for(int j = 0; j < nodes_count; ++j) {
-      matrix[i][j] = std::pow(nodes[i], nodes_count - j - 1);
+  std::vector<std::vector<double>> matrix(order,
+                                          std::vector<double>(order));
+  std::vector<double> B(order);
+  for(int i = 0; i < order; ++i) {
+    for(int j = 0; j < order; ++j) {
+      matrix[i][j] = std::pow(nodes[i], order - j - 1);
     }
     B[i] = func_value(nodes[i]);
   }
-  B = solve_system(matrix, B, nodes_count);
+  solve_system(matrix, B);
   clock_t end_time = clock();
 
   long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
 //  std::cout << "Time: " << search_time << std::endl;
 
   std::vector<std::pair<double, int>> ret;
-  for(int i = 0; i < nodes_count; ++i) {
-    ret.emplace_back(B[i], nodes_count - i - 1);
+  for(int i = 0; i < order; ++i) {
+    ret.push_back({B[i], order - i - 1});
 //    if (i == nodes_count - 1) {
 //      std::cout << std::fixed << std::setprecision(12) << "(" << B[i] << ")*x^" << nodes_count - i - 1 << std::endl;
 //    } else {
@@ -202,7 +203,7 @@ double get_polynom_value(std::vector<std::pair<double, int>>& coeff_power, doubl
 
 double task_5() {
   const double value = std::sqrt(2) / 2;
-//  const double value = M_PI;
+//  const double value = M_PI / 7;
   auto nodes = get_equally_spaced_nodes(100);
   int nearest_ind = 0;
   double nearest_value = INT8_MAX;
@@ -226,20 +227,18 @@ double task_5() {
     --left_ind;
     ++right_ind;
     prev_value = cur_value;
-    if (right_ind > 100) right_margin = true;
     if (left_ind < 0) left_margin = true;
+    if (right_ind > 100) right_margin = true;
     if (!left_margin) {
       nodes_to_check.push_back(nodes[left_ind]);
       ++count;
     }
     if (!right_margin) {
-
       nodes_to_check.push_back(nodes[right_ind]);
       ++count;
     }
     pol = task_1_2(nodes_to_check);
     cur_value = get_polynom_value(pol, value);
-
   }
   std::cout << "Nodes count: " << nodes_count << "Value: " <<  cur_value << std::endl;
   return cur_value;
@@ -337,7 +336,7 @@ void task_7(int n) {
     b[i] = scalar_mul(f, table[i]);
   }
 
-  auto ans = solve_system(matrix, b, n + 1);
+  auto ans = solve_system(matrix, b);
   clock_t end_time = clock();
   long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
   std::cout << "Time: " << search_time << std::endl;
@@ -357,7 +356,7 @@ int main() {
 //   /*Пункт 2,4*/auto nodes = get_cheb_nodes(nodes_count);
 //  task_1_2(nodes);
 //  task_3_4(nodes);
-  task_5();
+//  task_5();
 //  task_6(nodes);
 //  task_7(6);
 
