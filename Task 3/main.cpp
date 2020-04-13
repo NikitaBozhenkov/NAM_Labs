@@ -5,8 +5,9 @@
 #include <fstream>
 
 const int nodes_count = 18;
+std::ofstream out("output.txt");
 
-double func_value(const double& x, const double& y) {
+double func_value(double x, double y) {
   return cos(x * y);
 }
 
@@ -41,6 +42,7 @@ double pol_value(const std::vector<double>& pol, const double& x) {
 }
 
 void task_1(std::vector<double>& x, std::vector<double>& y) {
+  clock_t start_time = clock();
   std::vector<double> ans(nodes_count * nodes_count);
   std::vector<std::vector<std::vector<double>>>
       w_x(nodes_count, std::vector<std::vector<double>>(nodes_count)),
@@ -71,18 +73,23 @@ void task_1(std::vector<double>& x, std::vector<double>& y) {
       }
     }
 
+  clock_t end_time = clock();
+
+  long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
+  std::cout << "Time: " << search_time << std::endl;
+
   for(int i = 0; i < nodes_count; ++i)
     for(int j = 0; j < nodes_count; ++j) {
-      std::cout << std::fixed << std::setprecision(3);
+      out << std::fixed << std::setprecision(100);
       if (fabs(ans[nodes_count * i + j]) <= 1e-3) continue;
       if (nodes_count * i + j != ans.size() - 1) {
-        std::cout << ans[nodes_count * i + j];
-        if (i >= 10) std::cout << "*x^(" << i << ")";
-        else std::cout << "*x^" << i << "";
-        if (j >= 10) std::cout << "y^(" << j << ")";
-        else std::cout << "y^" << j;
-        if (nodes_count * i + j != ans.size() - 1 && ans[nodes_count * i + j + 1] >= 1e-4) {
-          std::cout << '+';
+        out << ans[nodes_count * i + j];
+        if (i >= 10) out << " * x ** (" << i << ") * ";
+        else out << " * x ** " << i << " * ";
+        if (j >= 10) out << "y ** (" << j << ")";
+        else out << "y ** " << j << " \n";
+        if (nodes_count * i + j != ans.size() - 1) {
+          out << "+ ";
         }
       }
     }
@@ -90,15 +97,20 @@ void task_1(std::vector<double>& x, std::vector<double>& y) {
 
 std::vector<double> vector_sum(const std::vector<double>& lhs,
                                const std::vector<double>& rhs) {
-  std::vector<double> res(lhs.size());
-  for(int i = 0; i < lhs.size(); ++i) {
-    res[i] = lhs[i] + rhs[i];
+  std::vector<double> ans(std::max(lhs.size(), rhs.size()));
+  for(int i = 0; i < ans.size(); ++i) {
+    if (lhs.size() > i && rhs.size() > i) {
+      ans[i] = lhs[i] + rhs[i];
+    } else if (lhs.size() <= i) {
+      ans[i] = rhs[i];
+    } else {
+      ans[i] = lhs[i];
+    }
   }
-  return res;
+  return ans;
 }
 
-std::vector<double> three_diagonal(std::vector<double>& matrix,
-                                   std::vector<double>& b) {
+std::vector<double> three_diagonal(std::vector<double>& matrix, std::vector<double>& b) {
   for(int i = 0; i < matrix.size() - 5; i += 3) {
     if (fabs(matrix[i]) < fabs(matrix[i + 3])) {
       std::swap(matrix[i], matrix[i + 3]);
@@ -158,19 +170,20 @@ void three_diag_system(const double& val,
 
 std::vector<std::vector<std::vector<double>>> task_2(std::vector<double>& x,
                                                      std::vector<double>& y) {
+  clock_t start_time = clock();
   double h = x[1] - x[0];
   double t = y[1] - y[0];
-  std::vector<double> ans(16);
+  std::vector<double> ans_splain(16);
   std::vector<std::vector<std::vector<double>>>
-      res((nodes_count - 1), std::vector<std::vector<double>>(nodes_count - 1));
+      res((x.size() - 1), std::vector<std::vector<double>>(y.size() - 1));
   std::vector<std::vector<std::vector<double>>>
-      deltas(nodes_count, std::vector<std::vector<double>>(nodes_count)),
-      polynoms(nodes_count, std::vector<std::vector<double>>(nodes_count));
+      deltas(x.size(), std::vector<std::vector<double>>(y.size())),
+      polynoms(x.size(), std::vector<std::vector<double>>(y.size()));
 
   std::vector<std::vector<double>> M(y.size());
-  for(int j = 0; j < y.size(); j++) {
+  for(int j = 0; j < y.size(); ++j) {
     std::vector<double> d(x.size() - 2);
-    for(int i = 1; i < x.size() - 1; i++) {
+    for(int i = 1; i < x.size() - 1; ++i) {
       d[i - 1] = (func_value(x[i + 1], y[j]) - func_value(x[i], y[j])) / h -
           (func_value(x[i], y[j]) - func_value(x[i - 1], y[j])) / h;
     }
@@ -190,8 +203,8 @@ std::vector<std::vector<std::vector<double>>> task_2(std::vector<double>& x,
   for(int i = 0; i < x.size(); ++i) {
     std::vector<double> d(y.size() - 2);
     for(int j = 1; j < y.size() - 1; ++j) {
-      d[j - 1] = (func_value(x[i], y[j + 1]) - func_value(x[i], y[j])) / t
-          - (func_value(x[i], y[j]) - func_value(x[i], y[j - 1])) / t;
+      d[j - 1] = (func_value(x[i], y[j + 1]) - func_value(x[i], y[j])) / t -
+          (func_value(x[i], y[j]) - func_value(x[i], y[j - 1])) / t;
     }
     three_diag_system(t, d, L, i);
   }
@@ -201,20 +214,21 @@ std::vector<std::vector<std::vector<double>>> task_2(std::vector<double>& x,
       std::vector<double> splayin_y = {0};
       std::vector<double> delta = {0};
       std::vector<double> polynom = {y[j], -1};
-      std::vector<double> s = polynom;
-      std::vector<double> c = polynom;
+      std::vector<double> s = {y[j], -1};
       polynom = mul_pols(polynom, polynom);
       polynom = mul_pols(polynom, s);
+
       std::vector<double> d = polynom;
       mul_pol_by_scalar(d, L[i][j - 1] / (6 * t));
       delta = vector_sum(delta, d);
       mul_pol_by_scalar(polynom, K[i][j - 1] / (6 * t));
       splayin_y = vector_sum(splayin_y, polynom);
+
+      std::vector<double> c = {y[j], -1};
       mul_pol_by_scalar(c, func_value(x[i], y[j - 1]) / t - L[i][j - 1] * t / 6);
       mul_pol_by_scalar(s, M[j - 1][i] / t - L[i][j - 1] * t / 6);
       splayin_y = vector_sum(splayin_y, s);
       delta = vector_sum(delta, c);
-      polynom = {0};
       polynom = {-y[j - 1], 1};
       s = polynom;
       c = polynom;
@@ -237,8 +251,8 @@ std::vector<std::vector<std::vector<double>>> task_2(std::vector<double>& x,
 
   for(int i = 1; i < x.size(); ++i) {
     for(int j = 1; j < y.size(); ++j) {
-      for(auto& r : ans) {
-        r = 0;
+      for(auto& elem : ans_splain) {
+        elem = 0;
       }
       std::vector<double> polynom_x = {x[i], -1};
       std::vector<double> s = polynom_x;
@@ -247,8 +261,8 @@ std::vector<std::vector<std::vector<double>>> task_2(std::vector<double>& x,
       s.push_back(0);
       s.push_back(0);
       mul_pol_by_scalar(polynom_x, 1 / (6 * h));
-      for(int k = 0; k < ans.size(); ++k) {
-        ans[k] += polynom_x[k / 4] * polynoms[i - 1][j][k % 4];
+      for(int k = 0; k < ans_splain.size(); ++k) {
+        ans_splain[k] += polynom_x[k / 4] * polynoms[i - 1][j][k % 4];
       }
 
       polynom_x = {-x[i - 1], 1};
@@ -258,61 +272,66 @@ std::vector<std::vector<std::vector<double>>> task_2(std::vector<double>& x,
       c.push_back(0);
       c.push_back(0);
       mul_pol_by_scalar(polynom_x, 1 / (6 * h));
-      for(int k = 0; k < ans.size(); ++k) {
-        ans[k] += polynom_x[k / 4] * polynoms[i][j][k % 4];
+      for(int k = 0; k < ans_splain.size(); ++k) {
+        ans_splain[k] += polynom_x[k / 4] * polynoms[i][j][k % 4];
       }
 
       std::vector<double> polynom_y = deltas[i][j];
-      std::vector<double> vector_suming_y = polynoms[i][j];
-      mul_pol_by_scalar(vector_suming_y, -pow(h, 2) / 6);
-      polynom_y = vector_sum(polynom_y, vector_suming_y);
+      std::vector<double> adding_y = polynoms[i][j];
+      mul_pol_by_scalar(adding_y, -pow(h, 2) / 6);
+      polynom_y = vector_sum(polynom_y, adding_y);
       mul_pol_by_scalar(c, 1 / h);
-      for(int k = 0; k < ans.size(); ++k) {
-        ans[k] += c[k / 4] * polynom_y[k % 4];
+      for(int k = 0; k < ans_splain.size(); ++k) {
+        ans_splain[k] += c[k / 4] * polynom_y[k % 4];
       }
 
       polynom_y = deltas[i - 1][j];
-      vector_suming_y = polynoms[i - 1][j];
-      mul_pol_by_scalar(vector_suming_y, -pow(h, 2) / 6);
-      polynom_y = vector_sum(polynom_y, vector_suming_y);
+      adding_y = polynoms[i - 1][j];
+      mul_pol_by_scalar(adding_y, -pow(h, 2) / 6);
+      polynom_y = vector_sum(polynom_y, adding_y);
       mul_pol_by_scalar(s, 1 / h);
-      for(int k = 0; k < ans.size(); ++k) {
-        ans[k] += s[k / 4] * polynom_y[k % 4];
+      for(int k = 0; k < ans_splain.size(); ++k) {
+        ans_splain[k] += s[k / 4] * polynom_y[k % 4];
       }
-      res[i - 1][j - 1] = ans;
+      res[i - 1][j - 1] = ans_splain;
     }
   }
+  clock_t end_time = clock();
+
+  long double search_time = (long double) (end_time - start_time) / CLOCKS_PER_SEC;
+  std::cout << "Time: " << search_time << std::endl;
+
   return res;
 }
 
 int main() {
-  std::ofstream out("output1.txt");
+  out << std::fixed << std::setprecision(100);
   auto x = get_equally_spaced_nodes();
   auto y = get_equally_spaced_nodes();
-//  task_1(x, y);
-  auto splain = task_2(x, y);
-  for(int i = 0; i < x.size() - 1; ++i) {
-    for(int j = 0; j < y.size() - 1; ++j) {
-      auto s = splain[i][j];
-//      out << "Splain with x in [" << x[i] << ", " << x[i + 1] << "]; y in [" << y[j] << ", " << y[j + 1] << "]" << std::endl;
-      out << "def makePolynom_" << i << "_" << j << "() :" << std::endl;
-      out << "  a = np.arange ( " << x[i] << ", " << x[i + 1] << ", 0.1)" << std::endl;
-      out << "  b = np.arange ( " << y[j] << ", " << y[j + 1] << ", 0.1)" << std::endl;
-      out << "  x, y = np.meshgrid(a, b)" << std::endl;
-      out << "  z = ";
-      for(int m = 0; m < 3; m++) {
-        for(int k = 0; k < 4; ++k) {
-          out << s[k] << " * ( x ** " << m << ") * ( y ** " << k << ") + ";
-        }
-      }
-      for(int k = 0; k < 3; ++k) {
-        out << s[k] << " * ( x ** " << 4 << ") * ( y ** " << k << ") + ";
-      }
-      out << s[4] << " * ( x ** " << 4 << ") * ( y ** " << 4 << ")";
-      out << std::endl;
-      out << "  return x, y, z" << std::endl;
-      out << std::endl;
-    }
-  }
+  task_1(x, y);
+//  auto splain = task_2(x, y);
+//  out << "def makePolynom(t):" << std::endl;
+//  for(int i = 0; i < nodes_count - 1; ++i) {
+//    for(int j = 0; j < nodes_count - 1; ++j) {
+//      auto s = splain[i][j];
+//      out << "    if t == " << i * (nodes_count - 1) + j << ":\n";
+//      out << "        a = np.arange ( " << x[i] << ", " << x[i + 1] << ", 0.1)" << std::endl;
+//      out << "        b = np.arange ( " << y[j] << ", " << y[j + 1] << ", 0.1)" << std::endl;
+//      out << "        x, y = np.meshgrid(a, b)" << std::endl;
+//      out << "        z = ";
+//      for(int m = 0; m < 3; ++m) {
+//        for(int k = 0; k < 4; ++k) {
+//          out << s[k] << " * ( x ** " << m << ") * ( y ** " << k << ") + ";
+//        }
+//      }
+//      for(int k = 0; k < 3; ++k) {
+//        out << s[k] << " * ( x ** " << 4 << ") * ( y ** " << k << ") + ";
+//      }
+//      out << s[4] << " * ( x ** " << 4 << ") * ( y ** " << 4 << ")";
+//      out << std::endl;
+//    }
+//  }
+//  out << "    return x, y, z" << std::endl;
+
   return 0;
 }
